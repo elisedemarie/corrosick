@@ -1,14 +1,4 @@
-use crate::trie::Trie;
-
+mod aho_corasick;
 mod trie;
 
-pub struct Match {
-    trie: Trie,
-}
-
-impl Match {
-    pub fn new(keywords: &[&str]) -> Self {
-        let trie = Trie::build_trie(&keywords);
-        Self { trie }
-    }
-}
+pub use aho_corasick::{AhoCorasick, Match};
