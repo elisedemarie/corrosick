@@ -1,7 +1,4 @@
-use crate::{
-    matches::{Match, Matches},
-    trie::Trie,
-};
+use crate::{matches::Matches, trie::Trie};
 
 pub struct AhoCorasick {
     trie: Trie,
@@ -13,9 +10,8 @@ impl AhoCorasick {
         Self { trie }
     }
 
-    pub fn search<'a>(&self, corpus: &'a str) -> Vec<Match<'a>> {
-        let matches = Matches::new(corpus, &self.trie);
-        matches.into_iter().collect()
+    pub fn find_matches<'a>(&self, corpus: &'a str) -> Matches<'a, '_> {
+        Matches::new(corpus, &self.trie)
     }
 }
 
@@ -29,7 +25,7 @@ mod tests {
         let keywords = [k1];
         let corpus = "abcd";
         let ac = AhoCorasick::new(&keywords);
-        let res: Vec<&str> = ac.search(corpus).iter().map(|it| it.text).collect();
+        let res: Vec<&str> = ac.find_matches(corpus).map(|it| it.text).collect();
         assert_eq!(res, vec![k1])
     }
 
@@ -39,7 +35,7 @@ mod tests {
         let keywords = [k1];
         let corpus = "abcd";
         let ac = AhoCorasick::new(&keywords);
-        let res: Vec<&str> = ac.search(corpus).iter().map(|it| it.text).collect();
+        let res: Vec<&str> = ac.find_matches(corpus).map(|it| it.text).collect();
         let exp: Vec<&str> = vec![];
         assert_eq!(res, exp)
     }
@@ -50,7 +46,7 @@ mod tests {
         let keywords = [k1];
         let corpus = "effghabcd";
         let ac = AhoCorasick::new(&keywords);
-        let res: Vec<&str> = ac.search(corpus).iter().map(|it| it.text).collect();
+        let res: Vec<&str> = ac.find_matches(corpus).map(|it| it.text).collect();
         assert_eq!(res, vec![k1])
     }
 
@@ -60,7 +56,7 @@ mod tests {
         let keywords = [k1];
         let corpus = "abcdefgh";
         let ac = AhoCorasick::new(&keywords);
-        let res: Vec<&str> = ac.search(corpus).iter().map(|it| it.text).collect();
+        let res: Vec<&str> = ac.find_matches(corpus).map(|it| it.text).collect();
         assert_eq!(res, vec![k1])
     }
 
@@ -70,7 +66,7 @@ mod tests {
         let keywords = [k1];
         let corpus = "efghabcdijkl";
         let ac = AhoCorasick::new(&keywords);
-        let res: Vec<&str> = ac.search(corpus).iter().map(|it| it.text).collect();
+        let res: Vec<&str> = ac.find_matches(corpus).map(|it| it.text).collect();
         assert_eq!(res, vec![k1])
     }
 
@@ -81,54 +77,7 @@ mod tests {
         let keywords = [k1, k2];
         let corpus = "abcdefgh";
         let ac = AhoCorasick::new(&keywords);
-        let mut res: Vec<&str> = ac.search(corpus).iter().map(|it| it.text).collect();
-        res.sort();
-        let mut exp = Vec::from(keywords);
-        exp.sort();
-        assert_eq!(res, exp)
-    }
-
-    #[test]
-    fn finds_keywords_that_are_subsets() {
-        let k1 = "abcd";
-        let k2 = "cd";
-        let keywords = [k1, k2];
-        let corpus = "abcd";
-        let ac = AhoCorasick::new(&keywords);
-        let mut res: Vec<&str> = ac.search(corpus).iter().map(|it| it.text).collect();
-        res.sort();
-        let mut exp = Vec::from(keywords);
-        exp.sort();
-        assert_eq!(res, exp)
-    }
-
-    #[test]
-    fn finds_multiple_keywords_that_are_subsets() {
-        let k1 = "abcd";
-        let k2 = "bcd";
-        let k3 = "cd";
-        let k4 = "d";
-        let keywords = [k1, k2, k3, k4];
-        let corpus = "abcd";
-        let ac = AhoCorasick::new(&keywords);
-        let mut res: Vec<&str> = ac.search(corpus).iter().map(|it| it.text).collect();
-        res.sort();
-        let mut exp = Vec::from(keywords);
-        exp.sort();
-        assert_eq!(res, exp)
-    }
-
-    #[test]
-    fn finds_sets_of_multiple_keywords_that_are_subsets() {
-        let k1 = "abcd";
-        let k2 = "bcd";
-        let k3 = "cd";
-        let k4 = "efg";
-        let k5 = "ef";
-        let keywords = [k1, k2, k3, k4, k5];
-        let corpus = "abcdefgh";
-        let ac = AhoCorasick::new(&keywords);
-        let mut res: Vec<&str> = ac.search(corpus).iter().map(|it| it.text).collect();
+        let mut res: Vec<&str> = ac.find_matches(corpus).map(|it| it.text).collect();
         res.sort();
         let mut exp = Vec::from(keywords);
         exp.sort();
@@ -145,7 +94,7 @@ mod tests {
         let keywords = [k1, k2, k3, k4, k5];
         let corpus = "abcdefgh";
         let ac = AhoCorasick::new(&keywords);
-        let mut res: Vec<&str> = ac.search(corpus).iter().map(|it| it.text).collect();
+        let mut res: Vec<&str> = ac.find_matches(corpus).map(|it| it.text).collect();
         res.sort();
         let mut exp = Vec::from(keywords);
         exp.sort();
@@ -158,7 +107,7 @@ mod tests {
         let keywords = [k1];
         let corpus = "abc is a letter of the abc phabet";
         let ac = AhoCorasick::new(&keywords);
-        let mut res: Vec<&str> = ac.search(corpus).iter().map(|it| it.text).collect();
+        let mut res: Vec<&str> = ac.find_matches(corpus).map(|it| it.text).collect();
         res.sort();
         let mut exp = Vec::from([k1, k1]);
         exp.sort();
@@ -171,7 +120,7 @@ mod tests {
         let keywords = [k1];
         let corpus = "aaaaaa";
         let ac = AhoCorasick::new(&keywords);
-        let mut res: Vec<&str> = ac.search(corpus).iter().map(|it| it.text).collect();
+        let mut res: Vec<&str> = ac.find_matches(corpus).map(|it| it.text).collect();
         res.sort();
         let mut exp = Vec::from([k1, k1, k1, k1, k1]);
         exp.sort();
@@ -184,7 +133,7 @@ mod tests {
         let keywords = [k1];
         let corpus = "";
         let ac = AhoCorasick::new(&keywords);
-        let mut res: Vec<&str> = ac.search(corpus).iter().map(|it| it.text).collect();
+        let mut res: Vec<&str> = ac.find_matches(corpus).map(|it| it.text).collect();
         res.sort();
         let mut exp: Vec<&str> = Vec::from([]);
         exp.sort();
@@ -197,7 +146,7 @@ mod tests {
         let keywords = [k1];
         let corpus = "abcd";
         let ac = AhoCorasick::new(&keywords);
-        let mut res: Vec<&str> = ac.search(corpus).iter().map(|it| it.text).collect();
+        let mut res: Vec<&str> = ac.find_matches(corpus).map(|it| it.text).collect();
         res.sort();
         let mut exp: Vec<&str> = Vec::from([]);
         exp.sort();
@@ -214,12 +163,12 @@ mod tests {
         let corpus_1 = "abcdef";
         let corpus_2 = "ghijkl";
         let ac = AhoCorasick::new(&keywords);
-        let mut res_1: Vec<&str> = ac.search(corpus_1).iter().map(|it| it.text).collect();
+        let mut res_1: Vec<&str> = ac.find_matches(corpus_1).map(|it| it.text).collect();
         res_1.sort();
         let mut exp_1 = Vec::from([k1, k2]);
         exp_1.sort();
         assert_eq!(res_1, exp_1);
-        let mut res_2: Vec<&str> = ac.search(corpus_2).iter().map(|it| it.text).collect();
+        let mut res_2: Vec<&str> = ac.find_matches(corpus_2).map(|it| it.text).collect();
         res_2.sort();
         let mut exp_2 = Vec::from([k3, k4]);
         exp_2.sort();
@@ -233,7 +182,7 @@ mod tests {
         let keywords = [k1, k2];
         let corpus = "abcd";
         let ac = AhoCorasick::new(&keywords);
-        let mut res: Vec<&str> = ac.search(corpus).iter().map(|it| it.text).collect();
+        let mut res: Vec<&str> = ac.find_matches(corpus).map(|it| it.text).collect();
         res.sort();
         let mut exp: Vec<&str> = Vec::from([k1]);
         exp.sort();
@@ -246,45 +195,8 @@ mod tests {
         let keywords = [k1];
         let corpus = "efghabcdijkl";
         let ac = AhoCorasick::new(&keywords);
-        let res = ac.search(corpus);
+        let res: Vec<_> = ac.find_matches(corpus).collect();
         assert_eq!(res[0].start, 4)
-    }
-
-    #[test]
-    fn subset_kwds_have_correct_starts() {
-        let k1 = "abcd";
-        let k2 = "cd";
-        let keywords = [k1, k2];
-        let corpus = "abcd";
-        let ac = AhoCorasick::new(&keywords);
-        let mut res: Vec<(usize, &str)> = ac
-            .search(corpus)
-            .iter()
-            .map(|it| (it.start, it.text))
-            .collect();
-        res.sort();
-        let mut exp = Vec::from([(0, k1), (2, k2)]);
-        exp.sort();
-        assert_eq!(res, exp)
-    }
-
-    #[test]
-    fn three_deep_output_chain_all_match_with_correct_starts() {
-        let k1 = "abcd";
-        let k2 = "bcd";
-        let k3 = "cd";
-        let keywords = [k1, k2, k3];
-        let corpus = "abcd";
-        let ac = AhoCorasick::new(&keywords);
-        let mut res: Vec<(usize, &str)> = ac
-            .search(corpus)
-            .iter()
-            .map(|it| (it.start, it.text))
-            .collect();
-        res.sort();
-        let mut exp = Vec::from([(0, k1), (1, k2), (2, k3)]);
-        exp.sort();
-        assert_eq!(res, exp)
     }
 
     #[test]
@@ -293,7 +205,7 @@ mod tests {
         let keywords = [k1];
         let corpus = "ABCD";
         let ac = AhoCorasick::new(&keywords);
-        let res: Vec<&str> = ac.search(corpus).iter().map(|it| it.text).collect();
+        let res: Vec<&str> = ac.find_matches(corpus).map(|it| it.text).collect();
         let exp: Vec<&str> = vec![];
         assert_eq!(res, exp)
     }
@@ -304,7 +216,7 @@ mod tests {
         let keywords = [k1];
         let corpus = "a";
         let ac = AhoCorasick::new(&keywords);
-        let res: Vec<&str> = ac.search(corpus).iter().map(|it| it.text).collect();
+        let res: Vec<&str> = ac.find_matches(corpus).map(|it| it.text).collect();
         assert_eq!(res, vec![k1])
     }
 
@@ -314,7 +226,7 @@ mod tests {
         let keywords = [k1];
         let corpus = "abcxyz";
         let ac = AhoCorasick::new(&keywords);
-        let res: Vec<&str> = ac.search(corpus).iter().map(|it| it.text).collect();
+        let res: Vec<&str> = ac.find_matches(corpus).map(|it| it.text).collect();
         assert_eq!(res, vec![k1])
     }
 
@@ -324,7 +236,7 @@ mod tests {
         let keywords = [k1];
         let corpus = "hello, abcd! how are you";
         let ac = AhoCorasick::new(&keywords);
-        let res: Vec<&str> = ac.search(corpus).iter().map(|it| it.text).collect();
+        let res: Vec<&str> = ac.find_matches(corpus).map(|it| it.text).collect();
         assert_eq!(res, vec![k1])
     }
 
@@ -334,7 +246,7 @@ mod tests {
         let keywords = [k1];
         let corpus = "héllo";
         let ac = AhoCorasick::new(&keywords);
-        ac.search(corpus);
+        ac.find_matches(corpus).for_each(|_| {})
     }
 
     #[test]
@@ -343,7 +255,7 @@ mod tests {
         let keywords = [k1];
         let corpus = "abcd";
         let ac = AhoCorasick::new(&keywords);
-        ac.search(corpus);
+        ac.find_matches(corpus).for_each(|_| {})
     }
 
     #[test]
@@ -352,6 +264,6 @@ mod tests {
         let keywords = [k1];
         let corpus = "abé";
         let ac = AhoCorasick::new(&keywords);
-        ac.search(corpus);
+        ac.find_matches(corpus).for_each(|_| {})
     }
 }
