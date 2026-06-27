@@ -1,18 +1,7 @@
-use crate::trie::Trie;
-
-pub struct Match<'a> {
-    pub start: usize,
-    pub text: &'a str,
-}
-
-impl<'a> Match<'a> {
-    pub fn from_match_end(corpus: &'a str, length: usize, end: usize, character: char) -> Self {
-        let end = end + character.len_utf8() - 1;
-        let start = end - (length - 1);
-        let text = &corpus[start..=end];
-        Self { start, text }
-    }
-}
+use crate::{
+    matches::{Match, Matches},
+    trie::Trie,
+};
 
 pub struct AhoCorasick {
     trie: Trie,
@@ -25,31 +14,8 @@ impl AhoCorasick {
     }
 
     pub fn search<'a>(&self, corpus: &'a str) -> Vec<Match<'a>> {
-        let mut matches: Vec<Match> = vec![];
-        let mut pointer = 0;
-        for (text_pointer, character) in corpus.char_indices() {
-            while self.trie.character_at_node(pointer, character).is_none() {
-                if pointer == 0 {
-                    break;
-                };
-                pointer = self.trie.get_suffix(pointer);
-            }
-            if let Some(node_id) = self.trie.character_at_node(pointer, character) {
-                pointer = *node_id
-            }
-            if let Some(length) = self.trie.check_end(pointer) {
-                matches.push(Match::from_match_end(corpus, length, text_pointer, character))
-            }
-            let mut output_id = self.trie.get_output(pointer);
-            while output_id.is_some() {
-                let id = output_id.unwrap();
-                if let Some(length) = self.trie.check_end(id) {
-                    matches.push(Match::from_match_end(corpus, length, text_pointer, character))
-                }
-                output_id = self.trie.get_output(id)
-            }
-        }
-        matches
+        let matches = Matches::new(corpus, &self.trie);
+        matches.into_iter().collect()
     }
 }
 
