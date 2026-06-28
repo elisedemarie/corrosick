@@ -6,7 +6,7 @@ A Rust implementation of the [Aho-Corasick algorithm](https://en.wikipedia.org/w
 
 In 2024, while working as a Data Scientist, I needed access to a fast text search tool to process gigabytes of text data searching for a set of patterns. We were running in an offline environment and it was going to take weeks to get access to any Python package. We did, however, have access to C++. In one week, I learnt about the Aho-Corasick algorithm and taught myself enough C++ to write an implementation. It worked and was performant enough but it was jank. 
 
-Bad borrows and memory leaks everywhere but I have come a long way since then. I ditched C++ for Rust pretty quickly but now, almost 2 years on, I wanted to challenge myself to re-write the algorithm now in Rust in only a week. This is what I have to show from that. 
+Bad borrows and memory leaks everywhere but I have come a long way since then. I ditched C++ for Rust pretty quickly but now, almost 2 years on, I wanted to challenge myself to re-write the algorithm. This crate and repo is a demonstration of how my skills have developed, a new Aho-Corasick algorithm written in just over a week (I have another job now so couldn’t devote as much time as I did the first time round!!).
 
 ## What it does
 
