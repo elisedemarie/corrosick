@@ -2,6 +2,7 @@ use std::str::CharIndices;
 
 use crate::trie::{NodeId, Trie};
 
+#[derive(Clone, Debug)]
 pub struct Match<'a> {
     pub start: usize,
     pub text: &'a str,
@@ -16,6 +17,7 @@ impl<'a> Match<'a> {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Matches<'a, 'b> {
     corpus: &'a str,
     trie: &'b Trie,
@@ -35,13 +37,13 @@ impl<'a, 'b> Matches<'a, 'b> {
         }
     }
 
-    fn get_outputs(
+    fn get_output(
         &self,
         pointer: NodeId,
         text_pointer: usize,
         character: char,
     ) -> Option<Match<'a>> {
-        let length = self.trie.check_end(pointer)?;
+        let length = self.trie.get_end(pointer)?;
         Some(Match::from_match_end(
             self.corpus,
             length,
@@ -50,19 +52,19 @@ impl<'a, 'b> Matches<'a, 'b> {
         ))
     }
 
-    fn exhaust_pending(&mut self) -> Option<Match<'a>> {
+    fn next_pending(&mut self) -> Option<Match<'a>> {
         let (output_id, text_pointer, character) = self.pending_output.take()?;
         let next_output = self.trie.get_output(output_id)?;
         self.pending_output = Some((next_output, text_pointer, character));
-        self.get_outputs(next_output, text_pointer, character)
+        self.get_output(next_output, text_pointer, character)
     }
 }
 
 impl<'a, 'b> Iterator for Matches<'a, 'b> {
     type Item = Match<'a>;
     fn next(&mut self) -> Option<Match<'a>> {
-        if let found_match @ Some(_) = self.exhaust_pending() {
-            return found_match;
+        if let Some(found_match) = self.next_pending() {
+            return Some(found_match);
         }
         let mut found_match = None;
         let mut pointer = self.pointer;
@@ -80,7 +82,7 @@ impl<'a, 'b> Iterator for Matches<'a, 'b> {
             if self.trie.get_output(pointer).is_some() {
                 self.pending_output = Some((pointer, text_pointer, character));
             }
-            if let Some(length) = self.trie.check_end(pointer) {
+            if let Some(length) = self.trie.get_end(pointer) {
                 found_match = Some(Match::from_match_end(
                     self.corpus,
                     length,
@@ -89,7 +91,7 @@ impl<'a, 'b> Iterator for Matches<'a, 'b> {
                 ));
                 break;
             }
-            if let output_match @ Some(_) = self.exhaust_pending() {
+            if let output_match @ Some(_) = self.next_pending() {
                 found_match = output_match;
                 break;
             }

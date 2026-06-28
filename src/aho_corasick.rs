@@ -1,5 +1,6 @@
 use crate::{matches::Matches, trie::Trie};
 
+#[derive(Clone, Debug)]
 pub struct AhoCorasick {
     trie: Trie,
 }

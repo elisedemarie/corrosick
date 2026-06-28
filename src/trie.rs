@@ -2,36 +2,23 @@ use std::collections::{BTreeMap, VecDeque};
 
 pub type NodeId = usize;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 struct TrieNode {
     children: BTreeMap<char, NodeId>,
-    is_end: Option<usize>,
-    suffix_link: NodeId,
-    output_link: Option<NodeId>,
+    end_length: Option<usize>,
 }
 
 impl TrieNode {
-    pub fn new() -> Self {
-        Self {
-            children: BTreeMap::new(),
-            is_end: None,
-            suffix_link: 0,
-            output_link: None,
-        }
-    }
-
-    pub fn add_child(&mut self, character: char, child_id: NodeId) {
+    fn add_child(&mut self, character: char, child_id: NodeId) {
         self.children.insert(character, child_id);
-    }
-
-    pub fn set_as_end(&mut self, length: usize) {
-        self.is_end = Some(length)
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Trie {
     trie_nodes: Vec<TrieNode>,
+    suffix_links: Vec<NodeId>,
+    output_links: Vec<Option<NodeId>>
 }
 
 impl Trie {
@@ -53,38 +40,34 @@ impl Trie {
         trie
     }
 
+    fn get_node(&self, node_id: NodeId) -> &TrieNode {
+        self.trie_nodes.get(node_id).expect("Should be node.")
+    }
+
     pub fn character_at_node(&self, node_id: NodeId, character: char) -> Option<&NodeId> {
         self.get_node(node_id).children.get(&character)
     }
 
     pub fn get_suffix(&self, node_id: NodeId) -> NodeId {
-        self.get_node(node_id).suffix_link
+        self.suffix_links.get(node_id).copied().expect("Should be node on trie.")
     }
 
-    pub fn check_end(&self, node_id: NodeId) -> Option<usize> {
-        self.get_node(node_id).is_end
+    pub fn get_end(&self, node_id: NodeId) -> Option<usize> {
+        self.get_node(node_id).end_length
     }
 
     pub fn get_output(&self, node_id: NodeId) -> Option<NodeId> {
-        self.get_node(node_id).output_link
+        self.output_links.get(node_id).copied().expect("Should be node on trie.")
     }
 
     fn add_new_node(&mut self, parent_id: NodeId, child_character: char) -> NodeId {
-        self.trie_nodes.push(TrieNode::new());
+        self.trie_nodes.push(TrieNode::default());
+        self.suffix_links.push(0);
+        self.output_links.push(None);
         let new_id = self.trie_nodes.len() - 1;
-        let parent = self.get_mut_node(parent_id);
+        let parent = &mut self.trie_nodes[parent_id];
         parent.add_child(child_character, new_id);
         new_id
-    }
-
-    fn get_mut_node(&mut self, id: NodeId) -> &mut TrieNode {
-        self.trie_nodes
-            .get_mut(id)
-            .expect("NodeId must be on Trie.")
-    }
-
-    fn get_node(&self, id: NodeId) -> &TrieNode {
-        self.trie_nodes.get(id).expect("NodeID must be on Trie.")
     }
 
     fn add_keyword(&mut self, keyword: &str) {
@@ -93,48 +76,36 @@ impl Trie {
         }
         let mut node_id: NodeId = 0;
         for character in keyword.chars() {
-            let node = self.get_mut_node(node_id);
-            node_id = match node.children.get(&character) {
-                Some(child) => *child,
+            node_id = match self.trie_nodes[node_id].children.get(&character).copied() {
+                Some(child) => child,
                 None => self.add_new_node(node_id, character),
             }
         }
-        self.get_mut_node(node_id).set_as_end(keyword.len());
+        self.trie_nodes[node_id].end_length = Some(keyword.len());
     }
 
     fn build_suffix_links(&mut self) {
-        let mut deque = VecDeque::from(vec![0]);
-        while !deque.is_empty() {
-            let this_id = deque.pop_front().unwrap();
-            let children: Vec<(char, NodeId)> = self
-                .get_node(this_id)
-                .children
-                .iter()
-                .map(|(c, id)| (*c, *id))
-                .collect();
-            let suffix_id = self.get_node(this_id).suffix_link;
-            let suffix_node = self.get_node(suffix_id);
-            self.get_mut_node(this_id).output_link = if suffix_node.is_end.is_some() {
-                Some(suffix_id)
-            } else {
-                suffix_node.output_link
-            };
-            for (character, id) in children {
+        let Self { trie_nodes, suffix_links, output_links } = self;
+        let mut deque = VecDeque::from([0usize]);
+        while let Some(this_id) = deque.pop_front() {
+            let suffix_id = suffix_links[this_id];
+            let suffix_node = &trie_nodes[suffix_id];
+            output_links[this_id] = suffix_node.end_length.map(|_| suffix_id).or_else(|| output_links[suffix_id]);
+            for (&character, &id) in &trie_nodes[this_id].children {
                 deque.push_back(id);
                 if this_id == 0 {
                     continue;
                 };
-                let mut suffix_set = false;
                 let mut this_suffix_id = suffix_id;
-                while !suffix_set {
-                    let suffix_node = self.get_node(this_suffix_id);
+                loop {
+                    let suffix_node = &trie_nodes[this_suffix_id];
                     if let Some(next_suffix) = suffix_node.children.get(&character) {
-                        self.get_mut_node(id).suffix_link = *next_suffix;
-                        suffix_set = true
+                        suffix_links[id] = *next_suffix;
+                        break
                     } else if this_suffix_id == 0 {
-                        suffix_set = true
+                        break
                     } else {
-                        this_suffix_id = suffix_node.suffix_link;
+                        this_suffix_id = suffix_links[this_suffix_id];
                     }
                 }
             }
@@ -145,7 +116,9 @@ impl Trie {
 impl Default for Trie {
     fn default() -> Self {
         Self {
-            trie_nodes: vec![TrieNode::new()],
+            trie_nodes: vec![TrieNode::default()],
+            suffix_links: vec![0],
+            output_links: vec![None],
         }
     }
 }
@@ -229,7 +202,7 @@ mod tests {
         let trie = Trie::build_trie(&keywords);
         let id = trie.follow(k1).expect("path should exist.");
         let node = trie.get_node(id);
-        assert!(node.is_end.is_some());
+        assert!(node.end_length.is_some());
     }
 
     #[test]
@@ -240,7 +213,7 @@ mod tests {
         let trie = Trie::build_trie(&keywords);
         let id = trie.follow(k2).expect("path should exist.");
         let node = trie.get_node(id);
-        assert!(node.is_end.is_some());
+        assert!(node.end_length.is_some());
     }
 
     #[test]
@@ -253,7 +226,7 @@ mod tests {
         for path in non_end_paths {
             let id = trie.follow(path).expect("path should exist.");
             let node = trie.get_node(id);
-            assert!(node.is_end.is_none());
+            assert!(node.end_length.is_none());
         }
     }
 
@@ -266,7 +239,7 @@ mod tests {
         for path in keywords {
             let id = trie.follow(path).expect("path should exist.");
             let node = trie.get_node(id);
-            assert!(node.is_end.is_some());
+            assert!(node.end_length.is_some());
         }
     }
 
@@ -278,8 +251,7 @@ mod tests {
         let prefixes: Vec<String> = (1..=k1.len()).map(|i| k1[..i].to_string()).collect();
         for path in prefixes {
             let id = trie.follow(&path).expect("path should exist.");
-            let node = trie.get_node(id);
-            assert_eq!(node.suffix_link, 0);
+            assert_eq!(trie.get_suffix(id), 0);
         }
     }
 
@@ -290,8 +262,7 @@ mod tests {
         let trie = Trie::build_trie(&keywords);
         let path = "abca";
         let id = trie.follow(path).expect("path should exist.");
-        let node = trie.get_node(id);
-        assert_eq!(node.suffix_link, 1);
+        assert_eq!(trie.get_suffix(id), 1);
     }
 
     #[test]
@@ -302,8 +273,7 @@ mod tests {
         let trie = Trie::build_trie(&keywords);
         let path = "abce";
         let id = trie.follow(path).expect("path should exist.");
-        let node = trie.get_node(id);
-        let obs_suffix = node.suffix_link;
+        let obs_suffix = trie.get_suffix(id);
         let exp_path = "e";
         let exp_id = trie.follow(exp_path).expect("path should exist.");
         assert_eq!(obs_suffix, exp_id);
@@ -317,8 +287,7 @@ mod tests {
         let trie = Trie::build_trie(&keywords);
         let path = "abcef";
         let id = trie.follow(path).expect("path should exist.");
-        let node = trie.get_node(id);
-        let obs_suffix = node.suffix_link;
+        let obs_suffix = trie.get_suffix(id);
         let exp_path = "ef";
         let exp_id = trie.follow(exp_path).expect("path should exist.");
         assert_eq!(obs_suffix, exp_id);
@@ -333,13 +302,11 @@ mod tests {
         let trie = Trie::build_trie(&keywords);
         let path = "coat";
         let id = trie.follow(path).expect("path should exist.");
-        let node = trie.get_node(id);
-        let obs_suffix = node.suffix_link;
+        let obs_suffix = trie.get_suffix(id);
         let suffix_1_path = "at";
         let suffix_1_id = trie.follow(suffix_1_path).expect("path should exist.");
-        let suffix_1_node = trie.get_node(suffix_1_id);
         assert_eq!(obs_suffix, suffix_1_id);
-        let suffix_1_suffix = suffix_1_node.suffix_link;
+        let suffix_1_suffix = trie.get_suffix(suffix_1_id);
         let suffix_2_path = "t";
         let suffix_2_id = trie.follow(suffix_2_path).expect("path should exist.");
         assert_eq!(suffix_1_suffix, suffix_2_id);
@@ -353,9 +320,7 @@ mod tests {
         let trie = Trie::build_trie(&keywords);
         let path = "e";
         let id = trie.follow(path).expect("path should exist.");
-        let node = trie.get_node(id);
-        let obs_suffix = node.suffix_link;
-        assert_eq!(obs_suffix, 0);
+        assert_eq!(trie.get_suffix(id), 0);
     }
 
     #[test]
@@ -366,10 +331,9 @@ mod tests {
         let trie = Trie::build_trie(&keywords);
         let path = "abc";
         let id = trie.follow(path).expect("path should exist.");
-        let node = trie.get_node(id);
         let exp_path = "bc";
         let exp_id = trie.follow(exp_path).expect("path should exist.");
-        assert_eq!(node.output_link.unwrap(), exp_id)
+        assert_eq!(trie.get_output(id).unwrap(), exp_id)
     }
 
     #[test]
@@ -380,8 +344,7 @@ mod tests {
         let prefixes: Vec<String> = (1..=k1.len()).map(|i| k1[..i].to_string()).collect();
         for path in prefixes {
             let id = trie.follow(&path).expect("path should exist.");
-            let node = trie.get_node(id);
-            assert_eq!(node.output_link, None);
+            assert_eq!(trie.get_output(id), None);
         }
     }
 
@@ -393,11 +356,10 @@ mod tests {
         let keywords = [k1, k2, k3];
         let trie = Trie::build_trie(&keywords);
         let bc_id = trie.follow("bc").expect("path should exist.");
-        assert!(trie.get_node(bc_id).is_end.is_none());
+        assert!(trie.get_node(bc_id).end_length.is_none());
         let abc_id = trie.follow("abc").expect("path should exist");
-        let node = trie.get_node(abc_id);
         let exp_id = trie.follow("c").expect("path should exist");
-        assert_eq!(node.output_link.unwrap(), exp_id)
+        assert_eq!(trie.get_output(abc_id).unwrap(), exp_id)
     }
 
     #[test]
@@ -408,10 +370,10 @@ mod tests {
         let keywords = [k1, k2, k3];
         let trie = Trie::build_trie(&keywords);
         let k1_id = trie.follow(k1).unwrap();
-        let k1_output = trie.get_node(k1_id).output_link.unwrap();
+        let k1_output = trie.get_output(k1_id).unwrap();
         let k2_id = trie.follow(k2).unwrap();
         assert_eq!(k1_output, k2_id);
-        let k2_output = trie.get_node(k2_id).output_link.unwrap();
+        let k2_output = trie.get_output(k2_id).unwrap();
         let k3_id = trie.follow(k3).unwrap();
         assert_eq!(k2_output, k3_id);
     }
@@ -426,9 +388,9 @@ mod tests {
         assert_eq!(trie.character_at_node(0, 'a'), Some(&a_id));
         assert_eq!(trie.character_at_node(0, 'z'), None);
         let abcd_id = trie.follow(k1).unwrap();
-        assert_eq!(trie.get_suffix(abcd_id), trie.get_node(abcd_id).suffix_link);
-        assert_eq!(trie.check_end(abcd_id), Some(4));
-        assert_eq!(trie.check_end(a_id), None);
+        assert_eq!(trie.get_suffix(abcd_id), trie.follow(k2).unwrap());
+        assert_eq!(trie.get_end(abcd_id), Some(4));
+        assert_eq!(trie.get_end(a_id), None);
         assert_eq!(trie.get_output(abcd_id), trie.follow(k2));
     }
 
@@ -439,9 +401,9 @@ mod tests {
         let keywords = [k1, k2];
         let trie = Trie::build_trie(&keywords);
         let k1_id = trie.follow(k1).unwrap();
-        let k1_output = trie.get_node(k1_id).output_link.unwrap();
+        let k1_output = trie.get_output(k1_id).unwrap();
         let k2_id = trie.follow(k2).unwrap();
-        let k2_output = trie.get_node(k2_id).output_link;
+        let k2_output = trie.get_output(k2_id);
         assert_eq!(k1_output, k2_id);
         assert!(k2_output.is_none());
     }
