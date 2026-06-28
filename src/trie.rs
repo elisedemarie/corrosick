@@ -41,9 +41,9 @@ impl Trie {
     }
 
     fn get_node(&self, node_id: NodeId) -> &TrieNode {
-        self.trie_nodes.get(node_id).expect(&format!(
-            "NodeId {node_id} out of bounds — trie internal invariant violated"
-        ))
+        self.trie_nodes.get(node_id).unwrap_or_else(|| {
+            panic!("NodeId {node_id} out of bounds — trie internal invariant violated")
+        })
     }
 
     pub(crate) fn character_at_node(&self, node_id: NodeId, character: char) -> Option<&NodeId> {
@@ -51,9 +51,9 @@ impl Trie {
     }
 
     pub(crate) fn get_suffix(&self, node_id: NodeId) -> NodeId {
-        self.suffix_links.get(node_id).copied().expect(&format!(
-            "NodeId {node_id} out of bounds — trie internal invariant violated."
-        ))
+        self.suffix_links.get(node_id).copied().unwrap_or_else(|| {
+            panic!("NodeId {node_id} out of bounds — trie internal invariant violated.")
+        })
     }
 
     pub(crate) fn get_end(&self, node_id: NodeId) -> Option<usize> {
@@ -61,9 +61,9 @@ impl Trie {
     }
 
     pub(crate) fn get_output(&self, node_id: NodeId) -> Option<NodeId> {
-        self.output_links.get(node_id).copied().expect(&format!(
-            "NodeId {node_id} out of bounds — trie internal invariant violated."
-        ))
+        self.output_links.get(node_id).copied().unwrap_or_else(|| {
+            panic!("NodeId {node_id} out of bounds — trie internal invariant violated.")
+        })
     }
 
     fn add_new_node(&mut self, parent_id: NodeId, child_character: char) -> NodeId {
