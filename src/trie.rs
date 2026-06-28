@@ -410,7 +410,7 @@ mod tests {
     }
 
     #[test]
-    fn subset_keyword_pucks_up_output() {
+    fn subset_keyword_picks_up_output() {
         let k1 = "abcd";
         let k2 = "cd";
         let keywords = [k1, k2];
