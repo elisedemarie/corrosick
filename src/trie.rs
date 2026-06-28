@@ -15,7 +15,7 @@ impl TrieNode {
 }
 
 #[derive(Debug, Clone)]
-pub struct Trie {
+pub(crate) struct Trie {
     trie_nodes: Vec<TrieNode>,
     suffix_links: Vec<NodeId>,
     output_links: Vec<Option<NodeId>>,
@@ -31,7 +31,7 @@ impl Trie {
         Some(id)
     }
 
-    pub fn build_trie(keywords: &[&str]) -> Self {
+    pub(crate) fn build_trie(keywords: &[&str]) -> Self {
         let mut trie = Self::default();
         for word in keywords {
             trie.add_keyword(word);
@@ -44,22 +44,22 @@ impl Trie {
         self.trie_nodes.get(node_id).expect("Should be node.")
     }
 
-    pub fn character_at_node(&self, node_id: NodeId, character: char) -> Option<&NodeId> {
+    pub(crate) fn character_at_node(&self, node_id: NodeId, character: char) -> Option<&NodeId> {
         self.get_node(node_id).children.get(&character)
     }
 
-    pub fn get_suffix(&self, node_id: NodeId) -> NodeId {
+    pub(crate) fn get_suffix(&self, node_id: NodeId) -> NodeId {
         self.suffix_links
             .get(node_id)
             .copied()
             .expect("Should be node on trie.")
     }
 
-    pub fn get_end(&self, node_id: NodeId) -> Option<usize> {
+    pub(crate) fn get_end(&self, node_id: NodeId) -> Option<usize> {
         self.get_node(node_id).end_length
     }
 
-    pub fn get_output(&self, node_id: NodeId) -> Option<NodeId> {
+    pub(crate) fn get_output(&self, node_id: NodeId) -> Option<NodeId> {
         self.output_links
             .get(node_id)
             .copied()
@@ -148,7 +148,7 @@ mod tests {
         while !queue.is_empty() {
             if let Some(id) = queue.pop_front() {
                 let node = trie.get_node(id);
-                let mut children: Vec<_>= node.children.iter().collect();
+                let mut children: Vec<_> = node.children.iter().collect();
                 children.sort_by_key(|(c, _)| *c);
                 for (character, new_id) in children {
                     string.push(*character);
