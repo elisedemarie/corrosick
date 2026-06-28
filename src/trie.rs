@@ -1,10 +1,10 @@
-use std::collections::{BTreeMap, VecDeque};
+use std::collections::{HashMap, VecDeque};
 
 pub type NodeId = usize;
 
 #[derive(Debug, Clone, Default)]
 struct TrieNode {
-    children: BTreeMap<char, NodeId>,
+    children: HashMap<char, NodeId>,
     end_length: Option<usize>,
 }
 
@@ -148,7 +148,9 @@ mod tests {
         while !queue.is_empty() {
             if let Some(id) = queue.pop_front() {
                 let node = trie.get_node(id);
-                for (character, new_id) in &node.children {
+                let mut children: Vec<_>= node.children.iter().collect();
+                children.sort_by_key(|(c, _)| *c);
+                for (character, new_id) in children {
                     string.push(*character);
                     queue.push_back(*new_id)
                 }
