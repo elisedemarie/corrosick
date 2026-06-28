@@ -8,6 +8,8 @@ In 2024, while working as a Data Scientist, I needed access to a fast text searc
 
 Memory leaks and bad patterns everywhere but I have come a long way since then. I ditched C++ for Rust pretty quickly but now, almost 2 years on, I wanted to challenge myself to re-write the algorithm. This crate and repo is a demonstration of how my skills have developed, a new Aho-Corasick algorithm written in just over a week (I have another job now so couldn’t devote as much time as I did the first time round!!).
 
+Also worth noting. This repo was **not written with AI**. There's definitly a place and value to those tools but the point of this project was so show and work on my own raw Rust abilities.
+
 ## What it does
 
 Searches a text for any number of keywords simultaneously in a single pass. Rather than scanning the text once per keyword, Aho-Corasick builds an automaton from all keywords upfront and searches in linear time — O(n + m + z), where n is the length of the text, m is the total length of all keywords, and z is the number of matches.
