@@ -1,16 +1,52 @@
 use crate::{matches::Matches, trie::Trie};
 
+/// A set of keywords that can be searched for in any text.
+///
+/// Build once with [`AhoCorasick::new`]. Call [`find_matches`] to return an
+/// iterator with found matches in that text.
+///
+/// [`find_matches`]: AhoCorasick::find_matches
 #[derive(Clone, Debug)]
 pub struct AhoCorasick {
     trie: Trie,
 }
 
 impl AhoCorasick {
+    /// Builds the automaton from a set of keywords.
+    ///
+    /// Construction is O(m) where m is the total length of all keywords.
+    /// Empty keywords are ignored.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use corrosick::AhoCorasick;
+    ///
+    /// let ac = AhoCorasick::new(&["foo", "bar", "baz"]);
+    /// ```
     pub fn new(keywords: &[&str]) -> Self {
         let trie = Trie::build_trie(keywords);
         Self { trie }
     }
 
+    /// Returns an iterator over all matches found in `corpus`.
+    ///
+    /// Matches are yielded in the order their final character appears in the
+    /// text. If multiple keywords end at the same position, the longest match
+    /// is yielded first followed by shorter ones.
+    ///
+    /// The search runs in O(n + z) time where n is the length of the corpus
+    /// and z is the number of matches.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use corrosick::AhoCorasick;
+    ///
+    /// let ac = AhoCorasick::new(&["he", "she", "his", "hers"]);
+    /// let matches: Vec<&str> = ac.find_matches("ushers").map(|m| m.text).collect();
+    /// assert_eq!(matches, vec!["she", "he", "hers"]);
+    /// ```
     pub fn find_matches<'a>(&self, corpus: &'a str) -> Matches<'a, '_> {
         Matches::new(corpus, &self.trie)
     }

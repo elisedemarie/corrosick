@@ -2,9 +2,15 @@ use std::str::CharIndices;
 
 use crate::trie::{NodeId, Trie};
 
+/// A match found in the search corpus.
 #[derive(Clone, Debug)]
 pub struct Match<'a> {
+    /// The byte offset of the first character of the match within the corpus.
+    ///
+    /// For ASCII text this equals the character index but for text containing
+    /// multi-byte UTF-8 characters the byte offset and character index will be different.
     pub start: usize,
+    /// The matched text (borrowed from the corpus).
     pub text: &'a str,
 }
 
