@@ -2,5 +2,12 @@
 name = "corrosick"
 version = "0.1.0"
 edition = "2024"
+description = "Fast multi-pattern string search using the Aho-Corasick algorithm"
+license = "MIT"
+homepage= "https://github.com/elisedemarie/corrosick"
+repository = "https://github.com/elisedemarie/corrosick"
+readme = "README.md"
+keywords = ["aho-corasick", "string-search", "pattern-matching", "text-search"]
+categories = ["text-processing", "algorithm"]
 
 [dependencies]
