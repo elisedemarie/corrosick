@@ -1,6 +1,6 @@
 use std::collections::{HashMap, VecDeque};
 
-pub type NodeId = usize;
+pub(crate) type NodeId = usize;
 
 #[derive(Debug, Clone, Default)]
 struct TrieNode {
@@ -41,7 +41,7 @@ impl Trie {
     }
 
     fn get_node(&self, node_id: NodeId) -> &TrieNode {
-        self.trie_nodes.get(node_id).expect("Should be node.")
+        self.trie_nodes.get(node_id).expect(&format!("NodeId {node_id} out of bounds — trie internal invariant violated"))
     }
 
     pub(crate) fn character_at_node(&self, node_id: NodeId, character: char) -> Option<&NodeId> {
@@ -52,7 +52,7 @@ impl Trie {
         self.suffix_links
             .get(node_id)
             .copied()
-            .expect("Should be node on trie.")
+            .expect(&format!("NodeId {node_id} out of bounds — trie internal invariant violated."))
     }
 
     pub(crate) fn get_end(&self, node_id: NodeId) -> Option<usize> {
@@ -63,7 +63,7 @@ impl Trie {
         self.output_links
             .get(node_id)
             .copied()
-            .expect("Should be node on trie.")
+            .expect(&format!("NodeId {node_id} out of bounds — trie internal invariant violated."))
     }
 
     fn add_new_node(&mut self, parent_id: NodeId, child_character: char) -> NodeId {
