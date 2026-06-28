@@ -8,6 +8,6 @@ homepage= "https://github.com/elisedemarie/corrosick"
 repository = "https://github.com/elisedemarie/corrosick"
 readme = "README.md"
 keywords = ["aho-corasick", "string-search", "pattern-matching", "text-search"]
-categories = ["text-processing", "algorithm"]
+categories = ["text-processing", "algorithms"]
 
 [dependencies]
