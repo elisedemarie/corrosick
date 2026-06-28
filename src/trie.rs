@@ -18,7 +18,7 @@ impl TrieNode {
 pub struct Trie {
     trie_nodes: Vec<TrieNode>,
     suffix_links: Vec<NodeId>,
-    output_links: Vec<Option<NodeId>>
+    output_links: Vec<Option<NodeId>>,
 }
 
 impl Trie {
@@ -49,7 +49,10 @@ impl Trie {
     }
 
     pub fn get_suffix(&self, node_id: NodeId) -> NodeId {
-        self.suffix_links.get(node_id).copied().expect("Should be node on trie.")
+        self.suffix_links
+            .get(node_id)
+            .copied()
+            .expect("Should be node on trie.")
     }
 
     pub fn get_end(&self, node_id: NodeId) -> Option<usize> {
@@ -57,7 +60,10 @@ impl Trie {
     }
 
     pub fn get_output(&self, node_id: NodeId) -> Option<NodeId> {
-        self.output_links.get(node_id).copied().expect("Should be node on trie.")
+        self.output_links
+            .get(node_id)
+            .copied()
+            .expect("Should be node on trie.")
     }
 
     fn add_new_node(&mut self, parent_id: NodeId, child_character: char) -> NodeId {
@@ -85,12 +91,19 @@ impl Trie {
     }
 
     fn build_suffix_links(&mut self) {
-        let Self { trie_nodes, suffix_links, output_links } = self;
+        let Self {
+            trie_nodes,
+            suffix_links,
+            output_links,
+        } = self;
         let mut deque = VecDeque::from([0usize]);
         while let Some(this_id) = deque.pop_front() {
             let suffix_id = suffix_links[this_id];
             let suffix_node = &trie_nodes[suffix_id];
-            output_links[this_id] = suffix_node.end_length.map(|_| suffix_id).or_else(|| output_links[suffix_id]);
+            output_links[this_id] = suffix_node
+                .end_length
+                .map(|_| suffix_id)
+                .or_else(|| output_links[suffix_id]);
             for (&character, &id) in &trie_nodes[this_id].children {
                 deque.push_back(id);
                 if this_id == 0 {
@@ -101,9 +114,9 @@ impl Trie {
                     let suffix_node = &trie_nodes[this_suffix_id];
                     if let Some(next_suffix) = suffix_node.children.get(&character) {
                         suffix_links[id] = *next_suffix;
-                        break
+                        break;
                     } else if this_suffix_id == 0 {
-                        break
+                        break;
                     } else {
                         this_suffix_id = suffix_links[this_suffix_id];
                     }
